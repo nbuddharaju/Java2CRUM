@@ -37,6 +37,7 @@ import java2crmpack.OrganizationServiceStub.QueryExpression;
 import java2crmpack.OrganizationServiceStub.RetrieveMultiple;
 import java2crmpack.OrganizationServiceStub.RetrieveMultipleResponse;
 import java2crmpack.OrganizationServiceStub.FilterExpression;
+import java2crmpack.OrganizationServiceStub.OrganizationRequest;
 
 import javax.wsdl.WSDLException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -55,6 +56,7 @@ import org.apache.axis2.client.Options;
 import org.apache.axis2.client.ServiceClient;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
+import org.apache.axis2.transport.http.HTTPConstants;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -495,7 +497,6 @@ public class Main {
             DiscoveryServiceStub.Execute exe = new  DiscoveryServiceStub.Execute();
             exe.setRequest(request);
             
-            
             DiscoveryServiceStub.ExecuteResponse response = serviceStub.execute(exe);
 
             DiscoveryServiceStub.RetrieveOrganizationResponse result = (RetrieveOrganizationResponse) response.getExecuteResult();
@@ -524,6 +525,7 @@ public class Main {
         try {
 
             System.out.println("get records from opporunity");
+            OrganizationServiceStub.Execute execute = new OrganizationServiceStub.Execute();
 
 //            QueryExpression query = QueryExpression.Factory.newInstance();
             QueryExpression query = new QueryExpression();
@@ -561,6 +563,7 @@ public class Main {
 //          query.setColumnSet(columnSet);
 //          query.setPageInfo(pageinfo);   
             addNewCriteria.setConditions(addNewConditions);
+            query.setPageInfo(pageinfo);
             query.setCriteria(addNewCriteria);
 //            RetrieveMultipleDocument retrieveMultipledocument = RetrieveMultipleDocument.Factory.newInstance(); not needed
 
@@ -569,19 +572,16 @@ public class Main {
             RetrieveMultiple retrieveMultiple = new RetrieveMultiple();
 
             retrieveMultiple.setQuery(query);
-            
 
             //set Timeout 
 
-//          ServiceClient serviceClient =  serviceStub._getServiceClient();
+          ServiceClient serviceClient =  serviceStub._getServiceClient();
 
-//          serviceClient.getOptions().setTimeOutInMilliSeconds( 3 * 60 * 1000);
+          serviceClient.getOptions().setTimeOutInMilliSeconds( 3 * 60 * 1000);
 
-            /*serviceClient.getOptions().setProperty(HTTPConstants.HTTP_PROTOCOL_VERSION, HTTPConstants.HEADER_PROTOCOL_10);
+            serviceClient.getOptions().setProperty(HTTPConstants.HTTP_PROTOCOL_VERSION, HTTPConstants.HEADER_PROTOCOL_10);
 
-            serviceClient.getOptions().setProperty(HTTPConstants.HEADER_TRANSFER_ENCODING_CHUNKED,false);*/         
-
-            
+            serviceClient.getOptions().setProperty(HTTPConstants.HEADER_TRANSFER_ENCODING_CHUNKED,false);       
 
             RetrieveMultipleResponse response = serviceStub.retrieveMultiple(retrieveMultiple);        
 
