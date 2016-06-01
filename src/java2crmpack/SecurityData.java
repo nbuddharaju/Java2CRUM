@@ -23,6 +23,7 @@ public final class SecurityData {
 	private String _keyIdentifier;
     private String _securityToken0;
     private String _securityToken1;
+    private String _encData;
 
     /**
      * Set security KeyIdentifier, SecurityToken0 and SecurityToken1.
@@ -59,4 +60,12 @@ public final class SecurityData {
     public String getSecurityToken1() {
         return this._securityToken1;
     }
+
+	public String getEncData() {
+		return _encData;
+	}
+
+	public void setEncData(String _encData) {
+		this._encData = _encData;
+	}
 }

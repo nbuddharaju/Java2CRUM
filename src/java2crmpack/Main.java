@@ -25,7 +25,18 @@ import java2crmpack.DiscoveryServiceStub.EndpointType;
 import java2crmpack.DiscoveryServiceStub.KeyValuePairOfEndpointTypestringztYlk6OT;
 import java2crmpack.DiscoveryServiceStub.OrganizationDetail;
 import java2crmpack.DiscoveryServiceStub.RetrieveOrganizationResponse;
+import java2crmpack.OrganizationServiceStub.ArrayOfConditionExpression;
+import java2crmpack.OrganizationServiceStub.ArrayOfanyType;
+import java2crmpack.OrganizationServiceStub.ColumnSet;
+import java2crmpack.OrganizationServiceStub.ConditionExpression;
+import java2crmpack.OrganizationServiceStub.ConditionOperator;
 import java2crmpack.OrganizationServiceStub.Entity;
+import java2crmpack.OrganizationServiceStub.EntityCollection;
+import java2crmpack.OrganizationServiceStub.PagingInfo;
+import java2crmpack.OrganizationServiceStub.QueryExpression;
+import java2crmpack.OrganizationServiceStub.RetrieveMultiple;
+import java2crmpack.OrganizationServiceStub.RetrieveMultipleResponse;
+import java2crmpack.OrganizationServiceStub.FilterExpression;
 
 import javax.wsdl.WSDLException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,6 +57,8 @@ import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.context.ConfigurationContextFactory;
 import org.apache.axis2.addressing.EndpointReference;
 import org.apache.log4j.Logger;
+import org.apache.xmlbeans.XmlObject;
+import org.apache.xmlbeans.XmlString;
 import org.xml.sax.SAXException;
 
 
@@ -57,7 +70,10 @@ public class Main {
      * Microsoft account (e.g. youremail@live.com) or Microsoft Office 365 (Org ID e.g. youremail@yourorg.onmicrosoft.com) User Name.
      */
 
-	private static final String UserName = "";
+	private static final String UserName = ""
+			+ ""
+			+ ""
+			+ "";//"nbuddharaju@gnanatest.onmicrosoft.com"; // "youremail@yourorg.onmicrosoft.com";
 	/**
 	 * Microsoft account or Microsoft Office 365 (Org ID) Password.
 	 */
@@ -65,7 +81,7 @@ public class Main {
 	/**
 	 * Unique Name of the organization
 	 */
-	private static final String OrganizationUniqueName = "";
+	private static final String OrganizationUniqueName = "";//"org436c8efe";
 	/**
 	 * URL for the Discovery Service For North America Microsoft account,
 	 * discovery service url is
@@ -76,7 +92,7 @@ public class Main {
 	 * http://technet.microsoft.com/en-us/library/gg309401.aspx
 	 */
 	
-	private static final String DiscoveryServiceURL = "https://crmstg15.varonis.com/XRMServices/2011/Discovery.svc";
+	private static final String DiscoveryServiceURL = "https://crmstg15.varonis.com/XRMServices/2011/Discovery.svc?wsdl=wsdl1";
 	private static final String OrganizationServiceURL = "https://crmstg15.varonis.com/VaronisUAT/XRMServices/2011/Organization.svc";
 //	private static final String DiscoveryServiceURL = "https://disco.crm8.dynamics.com/XRMServices/2011/Discovery.svc";
 //	private static final String OrganizationServiceURL = "https://gnanatest.api.crm8.dynamics.com/XRMServices/2011/Organization.svc";
@@ -100,44 +116,45 @@ public class Main {
         try {
             
         // Retrieve the authentication policy for the discovery service.
-        OnlineAuthenticationPolicy discoveryPolicy =
-                new OnlineAuthenticationPolicy(DiscoveryServiceURL + FlatWSDLSuffix);
-        WsdlTokenManager discoeryTokenManager = new WsdlTokenManager();        
-        // Authenticate the user using the discovery authentication policy.
-        SecurityData discoverySecurityData = discoeryTokenManager.authenticate(DiscoveryServiceURL, 
-                    UserName, 
-                    UserPassword,
-                    discoveryPolicy.getAppliesTo(),
-                    discoveryPolicy.getPolicy(),
-                    discoveryPolicy.getIssuerUri());
-            
-        // Retrieve discovery stub using organization URL with the security data.
-        DiscoveryServiceStub discoveryServiceStub = createDiscoveryServiceStub(DiscoveryServiceURL, 
-                discoverySecurityData);            
-        
-        // Retrieve organization service url using discovery stub.
-        String orgUrl = discoverOrganizationUrl(discoveryServiceStub, OrganizationUniqueName);
+//        OnlineAuthenticationPolicy discoveryPolicy =
+//                new OnlineAuthenticationPolicy(DiscoveryServiceURL, FlatWSDLSuffix);
+//        WsdlTokenManager discoeryTokenManager = new WsdlTokenManager();        
+//        // Authenticate the user using the discovery authentication policy.
+//        System.out.println("username " + UserName);
+//        SecurityData discoverySecurityData = discoeryTokenManager.authenticate(DiscoveryServiceURL, 
+//                    UserName, 
+//                    UserPassword,
+//                    discoveryPolicy.getAppliesTo(),
+//                    discoveryPolicy.getPolicy(),
+//                    discoveryPolicy.getIssuerUri());
+//            
+//        // Retrieve discovery stub using organization URL with the security data.
+//        DiscoveryServiceStub discoveryServiceStub = createDiscoveryServiceStub(DiscoveryServiceURL, 
+//                discoverySecurityData);            
 //        
-        System.out.println("Org url is %s" + orgUrl);
+////        // Retrieve organization service url using discovery stub.
+//        String orgUrl = discoverOrganizationUrl(discoveryServiceStub, OrganizationUniqueName);
+        System.out.println("Org url is " + OrganizationServiceURL);
         
         // The discovery service stub cannot be reused against the organization service 
         // as the Issuer and AppliesTo may differ between the discovery and organization services.
         // Retrieve the authentication policy for the organization service.
-//        OnlineAuthenticationPolicy organizationPolicy =
-//                new OnlineAuthenticationPolicy(orgUrl + FlatWSDLSuffix);
-//        WsdlTokenManager orgTokenManager = new WsdlTokenManager();        
+        OnlineAuthenticationPolicy organizationPolicy =
+                new OnlineAuthenticationPolicy(OrganizationServiceURL, FlatWSDLSuffix);
+        WsdlTokenManager orgTokenManager = new WsdlTokenManager();        
 //        // Authenticate the user using the organization authentication policy.
-//        SecurityData securityData = orgTokenManager.authenticate(orgUrl, 
-//                    UserName, 
-//                    UserPassword,
-//                    organizationPolicy.getAppliesTo(),
-//                    organizationPolicy.getPolicy(),
-//                    organizationPolicy.getIssuerUri());        
+        SecurityData securityData = orgTokenManager.authenticate(OrganizationServiceURL, 
+                    UserName, 
+                    UserPassword,
+                    organizationPolicy.getAppliesTo(),
+                    organizationPolicy.getPolicy(),
+                    organizationPolicy.getIssuerUri());        
         
         // Retrieve organization stub using organization URL with the security data.
-//        OrganizationServiceStub serviceStub = createOrganizationServiceStub(
-//                orgUrl,
-//                securityData);
+        OrganizationServiceStub serviceStub = createOrganizationServiceStub(
+        		OrganizationServiceURL,
+                securityData);
+        get_records(serviceStub);
 //
 //        // Create an sample account record.
 //        OrganizationServiceStub.Guid newAccountGUID = createAccount(serviceStub);
@@ -200,7 +217,9 @@ public class Main {
         options.setReplyTo(endPoint);
 
         sc.setOptions(options);
-        sc.addHeader(createCRMSecurityHeaderBlock(securityData));
+        SOAPHeaderBlock header = createCRMSecurityHeaderBlock(securityData);
+		sc.addHeader(header);
+        logger.info("Header block " + header);
         try {
             sc.engageModule("addressing");
         } catch (AxisFault e) {
@@ -233,33 +252,40 @@ public class Main {
 
         String currentDateTime = dateTimeData.getCreatedDateTime();
         String expireDateTime = dateTimeData.getExpiresDateTime();
-        String passwdHeaderTemplate = "<o:Security s:mustUnderstand=\"1\" "
-        		+ " xmlns:o=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
-                + "      <o:UsernameToken u:Id=\"user\">"
-                + "        <o:Username>%s</o:Username>"
-                + "        <o:Password>%s</o:Password>"
-                + "      </o:UsernameToken>"
-                + "        %s"
-                + "    </o:Security>";
+//        String passwdHeaderTemplate = "<o:Security s:mustUnderstand=\"1\" "
+//        		+ " xmlns:o=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
+//                + "      <o:UsernameToken u:Id=\"user\">"
+//                + "        <o:Username>%s</o:Username>"
+//                + "        <o:Password>%s</o:Password>"
+//                + "      </o:UsernameToken>"
+//                + "        %s"
+//                + "    </o:Security>";
+        String securityHeaderTemplate = "<EncryptedAssertion xmlns=\"urn:oasis:names:tc:SAML:2.0:assertion\"><EncryptedData " +
+                "    xmlns:xenc=\"http://www.w3.org/2001/04/xmlenc#\"" +
+                "     Id=\"Assertion0\" " +
+                "    Type=\"http://www.w3.org/2001/04/xmlenc#Element\">" +
+                "%s </EncryptedData> </EncryptedAssertion>";
         
-        String securityHeaderTemplate = "<EncryptedData " +
+        String securityHeaderTemplate2 = "<EncryptedData " +
                 "    xmlns=\"http://www.w3.org/2001/04/xmlenc#\"" +
                 "     Id=\"Assertion0\" " +
                 "    Type=\"http://www.w3.org/2001/04/xmlenc#Element\">" +
                 "    <EncryptionMethod " +
-                "        Algorithm=\"http://www.w3.org/2001/04/xmlenc#tripledes-cbc\"/>" +
+                "        Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\"/>" +
                 "    <ds:KeyInfo " +
                 "        xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">" +
                 "        <EncryptedKey>" +
                 "            <EncryptionMethod " +
-                "                Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p\"/>" +
+                "                Algorithm=\"http://www.w3.org/2001/04/xmlenc#rsa-oaep-mgf1p\"> " +
+                " 					<DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\" />  </EncryptionMethod> " +
                 "            <ds:KeyInfo Id=\"keyinfo\">" +
-                "                <wsse:SecurityTokenReference " +
-                "                    xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">" +
-                "                    <wsse:KeyIdentifier " +
-                "                        EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\" " +
-                "                        ValueType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509SubjectKeyIdentifier\">%s</wsse:KeyIdentifier>" +
-                "                </wsse:SecurityTokenReference>" +
+                "            <SecurityTokenReference " +
+				"		b:TokenType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV2.0\" " +
+				"		xmlns=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" " +
+				"		xmlns:b=\"http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd\"> " +
+				"		<KeyIdentifier " +
+				"			ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLID\">%s</KeyIdentifier> " +  
+				"	</SecurityTokenReference>" +
                 "            </ds:KeyInfo>" +
                 "            <CipherData>" +
                 "                <CipherValue>%s</CipherValue>" +
@@ -271,13 +297,16 @@ public class Main {
                 "    </CipherData>" +
                 "</EncryptedData>";
 
+//        String securityHeader = String.format(
+//                securityHeaderTemplate,
+//                securityData.getKeyIdentifier(),
+//                securityData.getSecurityToken0(),
+//                securityData.getSecurityToken1()
+//                );
         String securityHeader = String.format(
                 securityHeaderTemplate,
-                securityData.getKeyIdentifier(),
-                securityData.getSecurityToken0(),
-                securityData.getSecurityToken1()
+                securityData.getEncData()
                 );
-
         try {
 
             OMFactory factory = OMAbstractFactory.getOMFactory();
@@ -441,6 +470,21 @@ public class Main {
         }
     }
 
+    private static void getSecureData(DiscoveryServiceStub serviceStub, String organizationUniqueName) 
+            throws RemoteException, IDiscoveryService_Execute_DiscoveryServiceFaultFault_FaultMessage {
+        try {
+            DiscoveryServiceStub.RetrieveOrganizationRequest request = new DiscoveryServiceStub.RetrieveOrganizationRequest();
+            
+            request.setUniqueName(organizationUniqueName);
+            
+            
+            DiscoveryServiceStub.Execute exe = new  DiscoveryServiceStub.Execute();
+            exe.setRequest(request);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+    }
+    
     private static String discoverOrganizationUrl(DiscoveryServiceStub serviceStub, String organizationUniqueName) 
             throws RemoteException, IDiscoveryService_Execute_DiscoveryServiceFaultFault_FaultMessage {
         try {
@@ -475,5 +519,90 @@ public class Main {
         }
         return null;
     }
+    private static void get_records(OrganizationServiceStub serviceStub) 
+			throws IOrganizationService_Retrieve_OrganizationServiceFaultFault_FaultMessage, RemoteException {
+        try {
+
+            System.out.println("get records from opporunity");
+
+//            QueryExpression query = QueryExpression.Factory.newInstance();
+            QueryExpression query = new QueryExpression();
+
+            query.setEntityName("opportunity");
+            ColumnSet columnSet = new ColumnSet();
+            columnSet.setAllColumns(true);
+            query.setColumnSet(columnSet);
+
+            PagingInfo pageinfo = new PagingInfo();
+
+            pageinfo.setCount(10);
+
+            pageinfo.setPageNumber(1);
+
+            pageinfo.setReturnTotalRecordCount(true);
+
+            FilterExpression addNewCriteria = new FilterExpression();
+
+            ArrayOfConditionExpression addNewConditions = new ArrayOfConditionExpression();
+
+            ConditionExpression condition = new ConditionExpression();
+
+            condition.setAttributeName("createdon");
+
+            condition.setOperator(ConditionOperator.Last7Days);
+
+//            ArrayOfanyType values = new ArrayOfanyType();
+//
+//            XmlObject addNewAnyType = XmlObject.Factory.newInstance();
+//            addNewAnyType.set(setStringObject("2014-01-01"));
+//            values.addAnyType(addNewAnyType);
+//            condition.setValues(values);
+            addNewConditions.addConditionExpression(condition);
+//          query.setColumnSet(columnSet);
+//          query.setPageInfo(pageinfo);   
+            addNewCriteria.setConditions(addNewConditions);
+            query.setCriteria(addNewCriteria);
+//            RetrieveMultipleDocument retrieveMultipledocument = RetrieveMultipleDocument.Factory.newInstance(); not needed
+
+//            RetrieveMultiple retrieveMultiple = retrieveMultipledocument.addNewRetrieveMultiple();
+
+            RetrieveMultiple retrieveMultiple = new RetrieveMultiple();
+
+            retrieveMultiple.setQuery(query);
+            
+
+            //set Timeout 
+
+//          ServiceClient serviceClient =  serviceStub._getServiceClient();
+
+//          serviceClient.getOptions().setTimeOutInMilliSeconds( 3 * 60 * 1000);
+
+            /*serviceClient.getOptions().setProperty(HTTPConstants.HTTP_PROTOCOL_VERSION, HTTPConstants.HEADER_PROTOCOL_10);
+
+            serviceClient.getOptions().setProperty(HTTPConstants.HEADER_TRANSFER_ENCODING_CHUNKED,false);*/         
+
+            
+
+            RetrieveMultipleResponse response = serviceStub.retrieveMultiple(retrieveMultiple);        
+
+//            RetrieveMultipleResponse response = retrieveMultiple2.getRetrieveMultipleResponse();
+
+            EntityCollection collection = response.getRetrieveMultipleResult();
+
+            int count = collection.getTotalRecordCount();
+
+            System.out.println("record_count" + count); 
+            
+        } catch (Exception e){
+        
+            e.printStackTrace();
+        }
+    }
     
+	private static XmlString setStringObject(String value) {
+		XmlString newInstance = XmlString.Factory.newInstance();
+		newInstance.setStringValue(value);
+		return newInstance;
+	}
+
 }

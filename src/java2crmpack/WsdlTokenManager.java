@@ -24,6 +24,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
@@ -91,6 +93,33 @@ public final class WsdlTokenManager {
             + " </s:Body>"
             + " </s:Envelope>"; 
     
+    private final String SecurityADFSTokenSoapTemplate = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\""
+            + "  xmlns:a=\"http://www.w3.org/2005/08/addressing\" "
+            		+ "  xmlns:u=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\"> "
+            		+ "  <s:Header>"
+    + "  <a:Action s:mustUnderstand=\"1\">http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>"
+    + "  <a:To s:mustUnderstand=\"1\">https://sso2.varonis.com/adfs/services/trust/13/usernamemixed</a:To>"
+    + "  <o:Security s:mustUnderstand=\"1\" xmlns:o=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\">"
+    + "  <o:UsernameToken u:Id=\"%s\">"
+    + "  <o:Username>%s</o:Username>"
+        + "  <o:Password>%s</o:Password>"
+        + "  </o:UsernameToken>"
+    + "  </o:Security>"
+  + "  </s:Header>"
+  + "  <s:Body>"
+    + "  <trust:RequestSecurityToken xmlns:trust=\"http://docs.oasis-open.org/ws-sx/ws-trust/200512\">"
+    	+ "  <wsp:AppliesTo xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2004/09/policy\">"
+    		+ "  <a:EndpointReference>"
+          + "  <a:Address>%s</a:Address>"
+        + "  </a:EndpointReference>"
+      + "  </wsp:AppliesTo>"
+      + "  <trust:KeyType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Bearer</trust:KeyType>"
+      + "  <trust:RequestType>http://docs.oasis-open.org/ws-sx/ws-trust/200512/Issue</trust:RequestType>"
+      + "  <trust:TokenType>urn:oasis:names:tc:SAML:2.0:assertion</trust:TokenType>"
+    + "  </trust:RequestSecurityToken>"
+  + "  </s:Body>"
+    + "  </s:Envelope>";
+    
     private final String SecurityTokenSoapTemplate = "<s:Envelope xmlns:s=\"http://www.w3.org/2003/05/soap-envelope\""
             + " xmlns:a=\"http://www.w3.org/2005/08/addressing\""
             + " xmlns:o=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\""
@@ -101,12 +130,12 @@ public final class WsdlTokenManager {
             + " xmlns:u=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\">"
             + "<s:Header>"
             + "    <a:Action s:mustUnderstand=\"1\">"
-            + "    http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue</a:Action>"
+            + "    http://docs.oasis-open.org/ws-sx/ws-trust/200512/RST/Issue</a:Action>"
             + "    <a:MessageID>urn:uuid:%s</a:MessageID>"
             + "    <a:ReplyTo>"
             + "      <a:Address>http://www.w3.org/2005/08/addressing/anonymous</a:Address>"
             + "    </a:ReplyTo>"
-            + "    <a:To s:mustUnderstand=\"1\">http://Passport.NET/tb</a:To>"
+            + "    <a:To s:mustUnderstand=\"1\">https://sso2.varonis.com/adfs/services/trust/13/usernamemixed</a:To>"
             + "    <o:Security s:mustUnderstand=\"1\">"
             + "      <o:UsernameToken u:Id=\"user\">"
             + "        <o:Username>%s</o:Username>"
@@ -127,11 +156,14 @@ public final class WsdlTokenManager {
             + "    </t:RequestSecurityToken>"
             + "  </s:Body>"
             + " </s:Envelope>";
+    
+    
+    
     private final String BinarySecurityToken = "      <wsse:BinarySecurityToken ValueType=\"urn:liveid:device\">"
             + "        <EncryptedData Id=\"BinaryDAToken0\""
             + "        Type=\"http://www.w3.org/2001/04/xmlenc#Element\""
             + "        xmlns=\"http://www.w3.org/2001/04/xmlenc#\">"
-            + "          <EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#tripledes-cbc\">"
+            + "          <EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes256-cbc\">"
             + "          </EncryptionMethod>"
             + "          <ds:KeyInfo>"
             + "            <ds:KeyName>http://Passport.NET/STS</ds:KeyName>"
@@ -178,40 +210,46 @@ public final class WsdlTokenManager {
         
         if (issuerUri.toString().indexOf("login.live.com") != -1)
         {    
-        // Generates random credentials (Username, Password & Application ID) for the device
-        // Sends the credentials to WLID and gets a PUID back
-        DeviceCredentials deviceCredentials = DeviceIdManager.registerDevice();
-
-        // Register Device Credentials and get binaryDAToken
-        String soapTemplate = String.format(
-                DeviceTokenTemplate,
-                "11" + deviceCredentials.getDeviceName(),
-                deviceCredentials.getPassword());
-
-        logger.debug("Device Credential Request: " + soapTemplate);
-
-        String binaryDATokenXML = getSOAPResponse(
-                issuerUri,
-                soapTemplate);
-
-        logger.debug("Response: " + binaryDATokenXML);
-
-        String cipherValue = getValueFromXML(binaryDATokenXML, "//*[local-name()='CipherValue']");
-
-        logger.debug("CipherValue: " + cipherValue);
-        
-        binarySecurityTokenTemplate = String.format(BinarySecurityToken, cipherValue);
+	        // Generates random credentials (Username, Password & Application ID) for the device
+	        // Sends the credentials to WLID and gets a PUID back
+	        DeviceCredentials deviceCredentials = DeviceIdManager.registerDevice();
+	
+	        // Register Device Credentials and get binaryDAToken
+	        String soapTemplate = String.format(
+	                DeviceTokenTemplate,
+	                "11" + deviceCredentials.getDeviceName(),
+	                deviceCredentials.getPassword());
+	
+	        logger.debug("Device Credential Request: " + soapTemplate);
+	
+	        String binaryDATokenXML = getSOAPResponse(
+	                issuerUri,
+	                soapTemplate);
+	
+	        logger.debug("Response: " + binaryDATokenXML);
+	
+	        String cipherValue = getValueFromXML(binaryDATokenXML, "//*[local-name()='CipherValue']");
+	
+	        logger.debug("CipherValue: " + cipherValue);
+	        
+	        binarySecurityTokenTemplate = String.format(BinarySecurityToken, cipherValue);
         }
 
         // Get Security Token by sending WLID username, password and device binaryDAToken
+//        String securityTemplate = String.format(
+//                SecurityTokenSoapTemplate,
+//                UUID.randomUUID().toString(),
+//                username,
+//                password,
+//                binarySecurityTokenTemplate,
+//                appliesTo,
+//                policy);
         String securityTemplate = String.format(
-                SecurityTokenSoapTemplate,
+                SecurityADFSTokenSoapTemplate,
                 UUID.randomUUID().toString(),
                 username,
                 password,
-                binarySecurityTokenTemplate,
-                "urn:crmna:dynamics.com",
-                policy);
+                appliesTo);
         
         logger.debug("Security Token Request: " + securityTemplate);
 
@@ -225,14 +263,28 @@ public final class WsdlTokenManager {
         String securityToken0 = getValueFromXML(securityTokenXML, "//*[local-name()='CipherValue']");
         String securityToken1 = getValueFromXML(securityTokenXML, "(//*[local-name()='CipherValue'])[2]");
         String keyIdentifier = getValueFromXML(securityTokenXML, "//*[local-name()='KeyIdentifier']");
-
+        final String AddressIssuerUriNodeNameRegexPattern = "(?i)(<xenc:EncryptedData.*?>)(.+?)(</xenc:EncryptedData>)";
+        String _encData = selectFirstMatchOrDefault(securityTokenXML, AddressIssuerUriNodeNameRegexPattern); 
+        
         logger.debug("Security Token 0: " + securityToken0);
         logger.debug("Security Token 1: " + securityToken1);
         logger.debug("Key Identifier: " + keyIdentifier);
-
-        return new SecurityData(keyIdentifier, securityToken0, securityToken1);
+        logger.info("Encrypted data " + _encData);
+        SecurityData securityData = new SecurityData(keyIdentifier, securityToken0, securityToken1);
+          
+        securityData.setEncData(_encData);
+		return securityData;
     }
-
+    
+    private String selectFirstMatchOrDefault(String input, String searchPattern){
+        Pattern pattern = Pattern.compile(searchPattern);        
+        Matcher myMatcher = pattern.matcher(input);
+        if(myMatcher.find())    {    
+            return myMatcher.group(2);
+        }
+        else
+            return "";            
+    }    
     /***
      * Get current and 5 minutes later GMT time in simple date format. e.g. "yyyy-MM-dd'T'HH:mm:ss"
      * @return RequestDateTimeData
@@ -258,7 +310,7 @@ public final class WsdlTokenManager {
         DocumentBuilder builder;
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-
+            System.out.println("input xml " + inputXML);
             Document document = builder.parse(new ByteArrayInputStream(inputXML.getBytes()));
 
             XPath xpath = XPathFactory.newInstance().newXPath();

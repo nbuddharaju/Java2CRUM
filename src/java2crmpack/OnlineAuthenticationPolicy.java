@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 public final class OnlineAuthenticationPolicy {
     static Logger logger = Logger.getLogger(OnlineAuthenticationPolicy.class
             .getName());
+	private String baseWsdlUrl;
 
     /**
      * Construct an Instance of the OnlineAuthenticationPolicy class.
@@ -32,10 +33,12 @@ public final class OnlineAuthenticationPolicy {
      * @param flatWsdlUrl
      *            URL to the Flattened WSDL
      */
-    public OnlineAuthenticationPolicy(String flatWsdlUrl)
+    public OnlineAuthenticationPolicy(String flatWsdlUrl, String wsdlsuffix)
+    
             throws ParserConfigurationException, SAXException, IOException,
             URISyntaxException, XPathExpressionException, WSDLException {
-        this.initialize(flatWsdlUrl);
+    	this.baseWsdlUrl = flatWsdlUrl;
+        this.initialize(flatWsdlUrl + wsdlsuffix);
     }
     
     /**
@@ -156,14 +159,18 @@ public final class OnlineAuthenticationPolicy {
                 // multiple issuers. In that case, the issuer is
                 // listed under the reference parameters. In other scenarios, it
                 // is listed in the Address node instead.
+//                appliesTo = "https://crmstg15.varonis.com/XRMServices/2011/Discovery.svc";
+//                System.out.println(" applies to " + appliesTo);
                 String issuerContainerNode = selectFirstMatchOrDefault(
                         policyNode, IssuerContainerRegexPater);
                 if (null != issuerContainerNode) {
                     // Read the value from the reference parameters. If it is
                     // not set, check the Address node.
-//                    String issuerUri = selectFirstMatchOrDefault(issuerContainerNode,
-//                            (authWithOrgId) ? OrgIdReferenceIssuerUriNodeNameRegexPattern : LiveIdReferenceIssuerUriNodeNameRegexPattern);
-                	String issuerUri = "https://login.microsoftonline.com/liveidSTS.srf";
+                    String issuerUri = selectFirstMatchOrDefault(issuerContainerNode,
+                            (authWithOrgId) ? OrgIdReferenceIssuerUriNodeNameRegexPattern : LiveIdReferenceIssuerUriNodeNameRegexPattern);
+//                	String issuerUri = "http://sso2.varonis.com/adfs/services/trust";//"https://login.microsoftonline.com/liveidSTS.srf";
+                    issuerUri = "https://sso2.varonis.com/adfs/services/trust/13/usernamemixed";
+                    System.out.println("Issuer URI " + issuerUri);
                 	// Try Address node to find issuer Uri.
                     if (null == issuerUri || "" == issuerUri) {
                         issuerUri = selectFirstMatchOrDefault(issuerContainerNode, 
@@ -172,7 +179,7 @@ public final class OnlineAuthenticationPolicy {
                     // If the issuer was discovered, it means that all of the
                     // required information has been found.
                     if (null != issuerUri && "" != issuerUri) {
-                        this.initialize(appliesTo, livePolicy, new URI(
+                        this.initialize(this.baseWsdlUrl, livePolicy, new URI(
                                 issuerUri));
                         return;
                     }
@@ -192,7 +199,7 @@ public final class OnlineAuthenticationPolicy {
         if (null == appliesTo || "" == appliesTo.trim()) {
 //            throw new NullPointerException("appliesTo");
         } else if (null == policy || "" == policy.trim()) {
-            throw new NullPointerException("policy");
+//            throw new NullPointerException("policy");
         } else if (null == issuerUri || "" == issuerUri.toString().trim()) {
             throw new NullPointerException("issuerUri");
         }
